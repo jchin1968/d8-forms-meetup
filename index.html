@@ -13,6 +13,7 @@ class: center, middle
 ### Joseph Chin<br>Singapore Drupal Meetup<br>October 24, 2016 
 
 
+
 ---
 # Hello
 * Joseph Chin
@@ -21,70 +22,50 @@ class: center, middle
 * jchin1968 on .media-icon[![image](images/google.png) ![image](images/twitter.png) ![image](images/linkedin.png) ![image](images/facebook.png) ![image](images/github.png)]
 
 
+
 ---
-# Today's Topic
-.left.left-float[
-* Create a Behat test to make sure a news block is current
-* Use the Behat Drupal Extension with a custom step definition
-]
-.right.right-float[![image](images/news_block.png)]
+# Agenda
+* Create a custom form 
+* Modify an existing form
 
 ???
-* Verify the latest news is being updated in a timely manner
-* This test is a bit contrived since there are probably better ways to test if a feeds importer is working. However, its simplicity let's me focus on the how creating the custom step definition
-* Before I begin, some assumptions...
-** Familiar with the concept of Behat and BDD (behaviorial driven development)
-** Setting up a Behat environment for a specific Drupal site i.e configuring the behat.yml file, drush
-** Writing tests using the default step definitions provided in the Drupal Extension
-** Running a Behat test
-** Basic object-oriented programming
+* Custom forms are created using the new object-oriented procedure
+* Modifying forms, however, reverts back to the older hook() function procedure
 
-???
-* assume user already has a working behat folder with behat.yml, FeatureContext.php and a feature file already created
 
 
 ---
-# Write Step Definition and Execute
+# Setup a New Module
 
-news.feature
-```Gherkin
-Feature: News is current
-  As a user, I should see a block with a list of current news
-
-  @api
-  Scenario: Home page should display a list of current news
-    Given I am logged in as an "administrator"
-    Then I run cron
-    When I go to the homepage
-    Then I should see the heading "Current News"
-*   And the datetime in region "news_publish_date" is not older than 4 hours
+myform.info.yml
+```yaml
+name: MyForm 
+description: 'Drupal 8 form examples'
+type: module
+core: 8.x
 ```
 
 ???
-* @api indicate should use drupal_api to execute steps
-* cron executes the feeds importer to pull in news from an external news source
-* The highlighted line contains an unrecognizable step definition
+* info.yml file required regardless 
+
 
 
 ---
-# Copy-and-Paste Suggestion into FeatureContext.php
+# Create Routing file
+myform.routing.yml
 
-```diff
-1 scenario (1 undefined)
-4 steps (3 passed, 1 undefined)
-0m1.04s (29.71Mb)
-
---- FeatureContext has missing steps. Define them with these snippets:
-
-*    /**
-*     * @Then the datetime in region :arg1 is not older than :arg2 hours
-*     */
-*    public function theDatetimeInRegionIsNotOlderThanHours($arg1, $arg2)
-*    {
-*        throw new PendingException();
-*    }
-
+```yaml
+beedit.add:
+  path: '/admin/config/development/beedit/edit'
+  defaults:
+    _title: 'BeEdit'
+    _form: '\Drupal\beedit\Form\BeEditEditForm'
+  requirements:
+    _permission: 'access content'
 ```
+
+
+
 
 ---
 # Write Assertion Logic
