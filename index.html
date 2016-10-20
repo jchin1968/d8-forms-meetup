@@ -13,7 +13,6 @@ class: center, middle
 ### Joseph Chin<br>Singapore Drupal Meetup<br>October 24, 2016 
 
 
-
 ---
 # Hello
 * Joseph Chin
@@ -22,106 +21,167 @@ class: center, middle
 * jchin1968 on .media-icon[![image](images/google.png) ![image](images/twitter.png) ![image](images/linkedin.png) ![image](images/facebook.png) ![image](images/github.png)]
 
 
-
 ---
-# Agenda
-* Create a custom form 
+# Today
+* Create an online lunch ordering form 
 * Modify an existing form
+* Learn some Drupal 8 development
 
 ???
-* Custom forms are created using the new object-oriented procedure
+* Create an online lunch ordering form using the new object-oriented procedure
 * Modifying forms, however, reverts back to the older hook() function procedure
 
 
+---
+# File Structure
+```
+<Drupal Root>
+ + core
+ + modules
+   + lunch
+     + src
+       + Form
+*        - LunchOrderForm.php
+*    - lunch.info.yml
+*    - lunch.route.yml
+ + profiles    
+ + sites
+ + themes
+ + vendors
+ - autoload.php
+ - composer.json
+ - index.php
+ - update.php
+```
 
 ---
-# Setup a New Module
+# Define Module and Path
 
-myform.info.yml
+lunch.info.yml
 ```yaml
-name: MyForm 
-description: 'Drupal 8 form examples'
+name: Lunch 
+description: 'Lunch Order Form'
 type: module
 core: 8.x
 ```
-
-???
-* info.yml file required regardless 
-
-
-
----
-# Create Routing file
-myform.routing.yml
+lunch.routing.yml
 
 ```yaml
-beedit.add:
-  path: '/admin/config/development/beedit/edit'
+lunch.order:
+  path: '/lunch/order'
   defaults:
-    _title: 'BeEdit'
-    _form: '\Drupal\beedit\Form\BeEditEditForm'
+    _title: 'Lunch Order'
+    _form: '\Drupal\lunch\Form\LunchOrderForm'
   requirements:
     _permission: 'access content'
 ```
 
-
-
+???
+* *.info.yml is the new way to create a module   
+* instead of a hook_menu() function, we now use a *.routing.yml file to map url paths
+* start by defining a route name i.e. lunch.order
+* then define the path url, title, etc.
 
 ---
-# Write Assertion Logic
+# Extend FormBase
+src/Form/LunchOrderForm.php
 
-FeatureContext.php
 ```php
-  /**
-   * @Then the datetime in region :region is not older than :hours hours
-   */
-  public function theDatetimeInRegionIsNotOlderThanHours($region, $hours) {
-*    // Get the region where a date string is supposed to be
-*    $region_object = $this->getSession()->getPage()->find('region', $region);
-*    if (!$region_object) {
-*      throw new \Exception(sprintf('No region "%s" found on the page %s.',
-*        $region, $this->getSession()->getCurrentUrl()));
-*    }
+<?php
+
+namespace Drupal\lunch\Form;
+
+use Drupal\Core\Form\FormBase;
+use Drupal\Core\Form\FormStateInterface;
+
+class LunchOrderForm extends FormBase {
+
+  public function getFormId() {
+  }
+
+  public function buildForm(array $form, FormStateInterface $form_state) {
+    ...
+  }
+
+  public function submitForm(array &$form, FormStateInterface $form_state) {
+    drupal_set_message($this->t('Thank you for your order'), 'status');
+  }
+}
+
+```
+
+
+???
+* Here's where it get's interesting
 *
-*    // Get region date string and convert to unix timestamp
-*    $date_string = $region_object->getText();
-*    $timestamp = strtotime($date_string);
-*
-*    // Compare region and current timestamps  
-*    if (time() - $timestamp > $hours * 3600) {
-*     throw new \Exception(sprintf('Datetime in "%s" is older then %s hours',
-*        $region, $hours));
-*    }
+
+---
+#function getFormId()
+```php
+  public function getFormId() {
+    return 'lunch_order_form';
   }
 ```
-???
-* php-doc annotation is used to define the step definition pattern
-* arg1 and arg2 can be renamed to something more meaningful
-* getSession() method is inherited from a Mink class. Mink is like a browser emulator and it contain methods to analyze the content of an html page
-* strtotime() is a php function to convert human-readable dates and times into    
 
 ---
-# Update Behat Configuration
+# function buildForm()
+```php
+  public function buildForm(array $form, FormStateInterface $form_state) {
+    $form['fullname'] =[
+      '#type' => 'textfield',
+      '#title' => $this->t('Full Name'),
+      '#required' => TRUE,
+    ];
 
-behat.yml
-```yaml
-default:
-  suites:
-    ...
-    ...
-  extensions:
-    Behat\MinkExtension:
-      ...
-      ...
-    Drupal\DrupalExtension:
-      ...
-      ...
-    region_map:
-*     news_publish_date: ".view-news .views-row-1 .views-field-created"
+    $form['delivery_date'] = [
+      '#type' => 'date',
+      '#title' => $this->t('Delivery Date'),
+      '#required' => TRUE,
+     ];
+
+    $form['delivery_time'] = [
+      '#type' => 'radios',
+      '#title' => $this->t('Delivery Time'),
+      '#options' => [1 => '11:30am', 2 => '12:00pm', 3 => '12:30pm', 4 => '1:00pm',],
+      '#required' => TRUE,
+    ];
+
+    $form['menu_selection'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Menu Selection'),
+      '#options' => [
+        1 => $this->t('Chicken Rice'),
+        2 => $this->t('Fried Noodles'),
+        3 => $this->t('Soup and Sandwich'),
+        4 => $this->t('Pizza'),
+      ],
+      '#required' => TRUE,
+    ];
+
+    $form['instructions'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('Special Instructions'),
+      '#rows' => 2,
+    ];
+
+    $form['order_submit'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Submit'),
+    ];
+    
+    return $form;
+  }
 ```
 
-???
-* Don't always need to update. In our case, we added one line to region_map which makes it easier to work with "news_publish_date" instead of messy css selectors
+
+---
+# function submitForm()
+
+```php
+  public function submitForm(array &$form, FormStateInterface $form_state) {
+    drupal_set_message($this->t('Thank you for your order'), 'status');
+  }
+```
 
 
 ---
@@ -130,9 +190,7 @@ default:
 
 ---
 # Closing Remarks
-* Behat for Drupal 8 is not quite ready for prime time
-* Running Behat tests can take a while. Checkout my project, [Beekeeper on Github](https://github.com/jchin1968/beekeeper), for running Behat in parallel using AWS
-* You can find these slides here: https://github.com/jchin1968/dcmanila2016-presentation
+* Refer to Drupal 7 Form API
 
 
 ---
