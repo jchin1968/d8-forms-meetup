@@ -24,9 +24,8 @@ class: center, middle
 
 ---
 # Today
-* Create an online lunch ordering form (Part 1) 
-* Modify an existing form (Part 2)
-* Learn some Drupal 8 development
+* Part 1 - Create an online lunch ordering form
+* Part 2 - Modify an existing form 
 
 ???
 * Create an online lunch ordering form using the new object-oriented procedure
@@ -34,17 +33,19 @@ class: center, middle
 
 
 ---
-# File Structure
+# Drupal 8 File Structure
 ```
 <Drupal Root>
  + core
  + modules
-   + lunch
-     + src
-       + Form
-*        - LunchOrderForm.php
-*    - lunch.info.yml
-*    - lunch.route.yml
+   + contrib
+   + custom
+*    + lunch
+*      + src
+*        + Form
+*          - LunchOrderForm.php
+*      - lunch.info.yml
+*      - lunch.route.yml
  + profiles    
  + sites
  + themes
@@ -67,8 +68,18 @@ class: center, middle
 
 
 ---
-# Part 1 - Define Module and Path
+# Part 1 - Create a Custom Form
+* Lunch Ordering Form with the following fields:
+  * Full Name
+  * Delievery Date and Time
+  * Menu Choices
+  * Comment box
+  * Submit button
+* Access the form at http://.../lunch/order  
 
+
+---
+# Create Info File
 ** lunch.info.yml **
 ```yaml
 name: Lunch 
@@ -76,6 +87,9 @@ description: 'Lunch Order Form'
 type: module
 core: 8.x
 ```
+
+---
+# Define URL Path
 ** lunch.routing.yml **
 
 ```yaml
@@ -174,10 +188,38 @@ class LunchOrderForm extends FormBase {
 
 ---
 # Part 2 - Modify an Existing Form
-* Customize the lunch order form
-* Rename the Full Name field to Your Name
-* Use AJAX to dynamically add menu option 
+* Customize the lunch order form using a new module
+* Rename the 'Full Name' field to 'Your Name'
 * Remove the instruction textarea field
+* Use AJAX to dynamically add menu option based on date
+
+---
+# File Structure
+```
+<Drupal Root>
+ + core
+ + modules
+   + contrib
+   + custom
+     + lunch
+       + src
+         + Form
+           - LunchOrderForm.php
+       - lunch.info.yml
+       - lunch.route.yml
+*    + halloween_lunch
+*      - halloween_lunch.info.yml
+*      - halloween_lunch.module      
+ + profiles    
+ + sites
+ + themes
+ + vendors
+ - autoload.php
+ - composer.json
+ - index.php
+ - update.php
+```
+
 
 ---
 # Create Info File
@@ -196,22 +238,20 @@ core: 8.x
 ** halloween_lunch.module **
 ```php
 <?php
-*use \Drupal\Core\Form\FormStateInterface;
+use \Drupal\Core\Form\FormStateInterface;
 
-/**
- * Implements hook_form_alter().
- */
 function halloween_lunch_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id == 'lunch_order_form') {
     
     // Change the title of fullname field
     $form['fullname']['#title'] = t('Your Name');
 
-    // Enable AJAX on field
-    $form[...] = ...;
-
     // Unset textarea field
     unset($form['instructions']);
+
+    // Enable AJAX on delivery date field
+    $form[...] = ...;
+
   }
 }
 ```
